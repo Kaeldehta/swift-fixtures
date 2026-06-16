@@ -15,7 +15,7 @@ let package = Package(
     .library(name: "Mockable", targets: ["Mockable"])
   ],
   dependencies: [
-    .package(url: "https://github.com/swiftlang/swift-syntax", "600.0.0"..<"603.0.0"),
+    .package(url: "https://github.com/swiftlang/swift-syntax", "601.0.0"..<"602.0.0"),
     .package(url: "https://github.com/pointfreeco/swift-macro-testing", from: "0.5.0"),
   ],
   targets: [
@@ -39,6 +39,10 @@ let package = Package(
         "MockableMacros",
         .product(name: "MacroTesting", package: "swift-macro-testing"),
       ]
+    ),
+    .testTarget(
+      name: "MockableTests",
+      dependencies: ["Mockable"]
     ),
   ]
 )
