@@ -5,7 +5,7 @@
 
   @Suite(
     .macros(
-      [FixtureMacro.self, FixtureCaseMacro.self],
+      [FixtureMacro.self, FixtureCaseMacro.self, FixtureValueMacro.self],
       record: .missing
     )
   )
@@ -143,6 +143,34 @@
             static var fixture: Self {
                 fixture()
             }
+        }
+        """
+      }
+    }
+
+    @Test func fixtureValueOverridesPropertyDefault() {
+      assertMacro {
+        """
+        @Fixture struct User {
+          @FixtureValue("someone@example.com") let email: String
+          let name: String
+        }
+        """
+      } expansion: {
+        """
+        struct User {
+          let email: String
+          let name: String
+        }
+
+        extension User {
+          static func fixture(email: String = "someone@example.com",
+            name: String = .fixture) -> Self {
+            Self(email: email, name: name)
+          }
+          static var fixture: Self {
+            fixture()
+          }
         }
         """
       }

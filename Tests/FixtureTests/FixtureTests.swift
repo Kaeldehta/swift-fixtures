@@ -33,8 +33,8 @@ struct FixtureTests {
   }
 
   @Test func overrideOnlyWhatYouNeed() {
-    let user = User.fixture(name: "Blob", isAdmin: true)
-    #expect(user.name == "Blob")
+    let user = User.fixture(name: "Alice", isAdmin: true)
+    #expect(user.name == "Alice")
     #expect(user.isAdmin == true)
     // Everything else stays at its default.
     #expect(user.id == 0)

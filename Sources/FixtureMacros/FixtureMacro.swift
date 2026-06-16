@@ -53,8 +53,16 @@ public struct FixtureMacro: ExtensionMacro {
     }.filter { variable in
       !variable.modifiers.contains { $0.name.tokenKind == .keyword(.static) }
         && !variable.modifiers.contains { $0.name.tokenKind == .keyword(.class) }
-    }.flatMap { variable -> [(name: TokenSyntax, type: TypeSyntax)] in
-      variable.bindings.compactMap { binding in
+    }.flatMap { variable -> [(name: TokenSyntax, type: TypeSyntax, defaultValue: String)] in
+      // A `@FixtureValue(x)` attribute supplies the parameter's default verbatim.
+      let customDefault = variable.attributes
+        .compactMap { $0.as(AttributeSyntax.self) }
+        .first { $0.attributeName.as(IdentifierTypeSyntax.self)?.name.text == "FixtureValue" }
+        .flatMap { $0.arguments?.as(LabeledExprListSyntax.self)?.first?.expression }
+        .map { "\($0.trimmed)" }
+      let defaultValue = customDefault ?? ".fixture"
+
+      return variable.bindings.compactMap { binding in
         // Skip computed properties, but keep stored ones with willSet/didSet observers.
         if let accessorBlock = binding.accessorBlock {
           switch accessorBlock.accessors {
@@ -72,12 +80,12 @@ public struct FixtureMacro: ExtensionMacro {
           let identifier = binding.pattern.as(IdentifierPatternSyntax.self)?.identifier,
           let type = binding.typeAnnotation?.type
         else { return nil }
-        return (name: identifier.trimmed, type: type.trimmed)
+        return (name: identifier.trimmed, type: type.trimmed, defaultValue: defaultValue)
       }
     }
 
     let parameters = properties
-      .map { "\($0.name): \($0.type) = .fixture" }
+      .map { "\($0.name): \($0.type) = \($0.defaultValue)" }
       .joined(separator: ",\n")
     let arguments = properties
       .map { "\($0.name): \($0.name)" }

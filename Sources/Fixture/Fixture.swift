@@ -20,7 +20,7 @@ public protocol Fixture {
 ///   let name: String
 /// }
 ///
-/// let user = User.fixture(name: "Blob")  // everything else defaulted
+/// let user = User.fixture(name: "Alice")  // everything else defaulted
 /// ```
 ///
 /// The macro also synthesizes the type's own ``Fixture`` conformance
@@ -39,3 +39,16 @@ public macro Fixture() = #externalMacro(module: "FixtureMacros", type: "FixtureM
 /// the default of the first declared case.
 @attached(peer)
 public macro FixtureCase() = #externalMacro(module: "FixtureMacros", type: "FixtureCaseMacro")
+
+/// Overrides the default value `@Fixture` uses for a stored property, replacing the
+/// type's `.fixture` with the given expression in the generated factory.
+///
+/// ```swift
+/// @Fixture struct User {
+///   @FixtureValue("someone@example.com") let email: String
+/// }
+/// // User.fixture().email == "someone@example.com"
+/// ```
+@attached(peer)
+public macro FixtureValue(_ value: Any) =
+  #externalMacro(module: "FixtureMacros", type: "FixtureValueMacro")
