@@ -18,6 +18,14 @@ struct User {
 let user = User.fixture(name: "Alice")  // id and isAdmin defaulted
 ```
 
+> [!WARNING]
+> **This package is very early in development.** It is pre-1.0, the API may change without
+> notice, and it has not yet been battle-tested in production. Pin a specific version and
+> expect breaking changes.
+>
+> Development relies heavily on AI coding tools — both the implementation and much of the
+> documentation are AI-assisted. Review generated code before depending on it.
+
 ## Why
 
 Test data is mostly boilerplate: a `User` needs an `id`, a `name`, an `isAdmin`, a
