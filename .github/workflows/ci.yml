@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - '*'
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  macos:
+    name: macOS
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+      - name: Run tests
+        run: swift test
+      - name: Run tests (all traits)
+        run: swift test --enable-all-traits
+
+  linux:
+    name: Linux (Swift ${{ matrix.swift }})
+    strategy:
+      matrix:
+        swift:
+          - '6.1'
+    runs-on: ubuntu-latest
+    container: swift:${{ matrix.swift }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run tests
+        run: swift test
+      - name: Run tests (all traits)
+        run: swift test --enable-all-traits
