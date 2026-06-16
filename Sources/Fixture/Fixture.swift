@@ -26,8 +26,16 @@ public protocol Fixture {
 /// The macro also synthesizes the type's own ``Fixture`` conformance
 /// (`static var fixture`), so nested `@Fixture` structs compose automatically.
 ///
+/// On an enum, `static var fixture` returns the first case (associated values defaulted
+/// to `.fixture`), or the case marked with ``FixtureCase()`` if one is present.
+///
 /// - Note: This targets the struct's implicit memberwise initializer. A struct with a
 ///   custom `init` whose signature differs from its stored properties may not compile
 ///   against the generated factory.
 @attached(extension, conformances: Fixture, names: named(fixture))
 public macro Fixture() = #externalMacro(module: "FixtureMacros", type: "FixtureMacro")
+
+/// Marks the enum case that `@Fixture` should use for `static var fixture`, overriding
+/// the default of the first declared case.
+@attached(peer)
+public macro FixtureCase() = #externalMacro(module: "FixtureMacros", type: "FixtureCaseMacro")

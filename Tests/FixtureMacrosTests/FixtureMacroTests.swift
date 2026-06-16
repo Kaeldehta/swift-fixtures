@@ -5,7 +5,7 @@
 
   @Suite(
     .macros(
-      [FixtureMacro.self],
+      [FixtureMacro.self, FixtureCaseMacro.self],
       record: .missing
     )
   )
@@ -190,6 +190,30 @@
         extension Status {
           static var fixture: Self {
             .active(since: .fixture, verified: .fixture)
+          }
+        }
+        """
+      }
+    }
+
+    @Test func enumFixtureCaseMarkerOverridesFirstCase() {
+      assertMacro {
+        """
+        @Fixture enum Status {
+          case active(since: Date)
+          @FixtureCase case unknown
+        }
+        """
+      } expansion: {
+        """
+        enum Status {
+          case active(since: Date)
+          case unknown
+        }
+
+        extension Status {
+          static var fixture: Self {
+            .unknown
           }
         }
         """

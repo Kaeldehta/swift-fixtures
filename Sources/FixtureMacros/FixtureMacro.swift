@@ -93,20 +93,26 @@ public struct FixtureMacro: ExtensionMacro {
     ]
   }
 
-  /// A `static var fixture` returning the enum's first case, with any associated
-  /// values defaulted to `.fixture`. Returns `nil` for an enum with no cases.
+  /// A `static var fixture` returning the case marked with `@FixtureCase` (or the first
+  /// case otherwise), with any associated values defaulted to `.fixture`. Returns `nil`
+  /// for an enum with no cases.
   private static func enumFixture(
     of enumDecl: EnumDeclSyntax,
     access: String
   ) -> DeclSyntax? {
-    let firstCase = enumDecl.memberBlock.members
-      .compactMap { $0.decl.as(EnumCaseDeclSyntax.self) }
-      .flatMap(\.elements)
-      .first
-    guard let firstCase else { return nil }
+    let caseDecls = enumDecl.memberBlock.members.compactMap {
+      $0.decl.as(EnumCaseDeclSyntax.self)
+    }
+    let markedCase = caseDecls.first { caseDecl in
+      caseDecl.attributes.contains { attribute in
+        attribute.as(AttributeSyntax.self)?
+          .attributeName.as(IdentifierTypeSyntax.self)?.name.text == "FixtureCase"
+      }
+    }
+    guard let chosenCase = (markedCase ?? caseDecls.first)?.elements.first else { return nil }
 
-    var value = ".\(firstCase.name.text)"
-    if let parameters = firstCase.parameterClause?.parameters {
+    var value = ".\(chosenCase.name.text)"
+    if let parameters = chosenCase.parameterClause?.parameters {
       let arguments = parameters.map { parameter -> String in
         if let label = parameter.firstName, label.tokenKind != .wildcard {
           return "\(label.text): .fixture"

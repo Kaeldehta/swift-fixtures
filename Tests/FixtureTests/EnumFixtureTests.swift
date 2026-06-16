@@ -13,6 +13,12 @@ enum Status {
   case banned
 }
 
+@Fixture
+enum Connection: Equatable {
+  case connected(host: String)
+  @FixtureCase case disconnected
+}
+
 @Suite
 struct EnumFixtureTests {
   @Test func usesFirstCase() {
@@ -26,6 +32,10 @@ struct EnumFixtureTests {
     }
     #expect(code == 0)
     #expect(label == "")
+  }
+
+  @Test func fixtureCaseMarkerOverridesFirstCase() {
+    #expect(Connection.fixture == .disconnected)
   }
 }
 
