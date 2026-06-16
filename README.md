@@ -39,18 +39,25 @@ dependencies: [
 ]
 ```
 
-Then add `Fixture` to your test target (it can be used in any target, but fixtures are
-test data, so a test target is the usual home):
+`@Fixture` is attached to your type declarations, so add `Fixture` to whichever target
+*declares* the types you want to annotate — usually your library or app target, not the
+test target:
 
 ```swift
-.testTarget(
-  name: "MyLibraryTests",
+.target(
+  name: "MyLibrary",
   dependencies: [
-    "MyLibrary",
     .product(name: "Fixture", package: "swift-fixture"),
   ]
 )
 ```
+
+> [!NOTE]
+> The macro expands on the type itself, so the generated `fixture(...)` factory and
+> `Fixture` conformance become part of that type and ship with your target — for a
+> `public` type, they become public API. If you'd rather keep fixtures out of your
+> shipping code, annotate types that live in a target you don't ship (e.g. declare them in
+> the test target).
 
 ## Usage
 
