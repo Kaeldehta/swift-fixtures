@@ -11,13 +11,41 @@ public struct FixtureMacro: ExtensionMacro {
     conformingTo protocols: [TypeSyntax],
     in context: some MacroExpansionContext
   ) throws -> [ExtensionDeclSyntax] {
-    guard let structDecl = declaration.as(StructDeclSyntax.self) else {
-      context.diagnose(
-        Diagnostic(node: node, message: FixtureDiagnostic.requiresStruct)
-      )
+    // Public/package access is mirrored onto the generated members.
+    let accessModifier = declaration.modifiers.first {
+      [.keyword(.public), .keyword(.package)].contains($0.name.tokenKind)
+    }
+    let access = accessModifier.map { "\($0.trimmed) " } ?? ""
+
+    let members: [DeclSyntax]
+    if let structDecl = declaration.as(StructDeclSyntax.self) {
+      members = structMembers(of: structDecl, access: access)
+    } else if let enumDecl = declaration.as(EnumDeclSyntax.self) {
+      guard let property = enumFixture(of: enumDecl, access: access) else {
+        context.diagnose(Diagnostic(node: node, message: FixtureDiagnostic.enumRequiresCase))
+        return []
+      }
+      members = [property]
+    } else {
+      context.diagnose(Diagnostic(node: node, message: FixtureDiagnostic.requiresStructOrEnum))
       return []
     }
 
+    // Only add the `: Fixture` clause when the type doesn't already declare it,
+    // otherwise the compiler reports a redundant conformance.
+    let inheritance = protocols.isEmpty ? "" : ": Fixture"
+    let extensionDecl = try ExtensionDeclSyntax("extension \(type.trimmed)\(raw: inheritance)") {
+      for member in members { member }
+    }
+    return [extensionDecl]
+  }
+
+  /// A `fixture(...)` factory whose parameters are the struct's memberwise-init
+  /// parameters (each defaulted to `.fixture`), plus the protocol's `static var fixture`.
+  private static func structMembers(
+    of structDecl: StructDeclSyntax,
+    access: String
+  ) -> [DeclSyntax] {
     // Stored properties that are memberwise-init parameters: explicit type, no
     // initializer (those keep their own default), no getter/setter.
     let properties = structDecl.memberBlock.members.compactMap {
@@ -48,11 +76,6 @@ public struct FixtureMacro: ExtensionMacro {
       }
     }
 
-    let accessModifier = structDecl.modifiers.first {
-      [.keyword(.public), .keyword(.package)].contains($0.name.tokenKind)
-    }
-    let access = accessModifier.map { "\($0.trimmed) " } ?? ""
-
     let parameters = properties
       .map { "\($0.name): \($0.type) = .fixture" }
       .joined(separator: ",\n")
@@ -60,20 +83,38 @@ public struct FixtureMacro: ExtensionMacro {
       .map { "\($0.name): \($0.name)" }
       .joined(separator: ", ")
 
-    let fixtureFunction: DeclSyntax = """
+    return [
+      """
       \(raw: access)static func fixture(\(raw: parameters)) -> Self {
       Self(\(raw: arguments))
       }
-      """
-    let fixtureProperty: DeclSyntax = "\(raw: access)static var fixture: Self { fixture() }"
+      """,
+      "\(raw: access)static var fixture: Self { fixture() }",
+    ]
+  }
 
-    // Only add the `: Fixture` clause when the type doesn't already declare it,
-    // otherwise the compiler reports a redundant conformance.
-    let inheritance = protocols.isEmpty ? "" : ": Fixture"
-    let extensionDecl = try ExtensionDeclSyntax("extension \(type.trimmed)\(raw: inheritance)") {
-      fixtureFunction
-      fixtureProperty
+  /// A `static var fixture` returning the enum's first case, with any associated
+  /// values defaulted to `.fixture`. Returns `nil` for an enum with no cases.
+  private static func enumFixture(
+    of enumDecl: EnumDeclSyntax,
+    access: String
+  ) -> DeclSyntax? {
+    let firstCase = enumDecl.memberBlock.members
+      .compactMap { $0.decl.as(EnumCaseDeclSyntax.self) }
+      .flatMap(\.elements)
+      .first
+    guard let firstCase else { return nil }
+
+    var value = ".\(firstCase.name.text)"
+    if let parameters = firstCase.parameterClause?.parameters {
+      let arguments = parameters.map { parameter -> String in
+        if let label = parameter.firstName, label.tokenKind != .wildcard {
+          return "\(label.text): .fixture"
+        }
+        return ".fixture"
+      }
+      value += "(\(arguments.joined(separator: ", ")))"
     }
-    return [extensionDecl]
+    return "\(raw: access)static var fixture: Self { \(raw: value) }"
   }
 }

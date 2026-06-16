@@ -1,12 +1,15 @@
 import SwiftDiagnostics
 
 enum FixtureDiagnostic: String, DiagnosticMessage {
-  case requiresStruct
+  case requiresStructOrEnum
+  case enumRequiresCase
 
   var message: String {
     switch self {
-    case .requiresStruct:
-      return "'@Fixture' can only be attached to a struct"
+    case .requiresStructOrEnum:
+      return "'@Fixture' can only be attached to a struct or enum"
+    case .enumRequiresCase:
+      return "'@Fixture' requires an enum with at least one case"
     }
   }
 

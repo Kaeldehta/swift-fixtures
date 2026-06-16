@@ -148,19 +148,83 @@
       }
     }
 
-    @Test func attachedToNonStructDiagnoses() {
+    @Test func enumUsesFirstCase() {
       assertMacro {
         """
         @Fixture enum Direction {
           case north
+          case south
+        }
+        """
+      } expansion: {
+        """
+        enum Direction {
+          case north
+          case south
+        }
+
+        extension Direction {
+          static var fixture: Self {
+            .north
+          }
+        }
+        """
+      }
+    }
+
+    @Test func enumFirstCaseWithAssociatedValues() {
+      assertMacro {
+        """
+        @Fixture enum Status {
+          case active(since: Date, verified: Bool)
+          case banned(String)
+        }
+        """
+      } expansion: {
+        """
+        enum Status {
+          case active(since: Date, verified: Bool)
+          case banned(String)
+        }
+
+        extension Status {
+          static var fixture: Self {
+            .active(since: .fixture, verified: .fixture)
+          }
+        }
+        """
+      }
+    }
+
+    @Test func emptyEnumDiagnoses() {
+      assertMacro {
+        """
+        @Fixture enum Never {
         }
         """
       } diagnostics: {
         """
-        @Fixture enum Direction {
+        @Fixture enum Never {
         ┬───────
-        ╰─ 🛑 '@Fixture' can only be attached to a struct
-          case north
+        ╰─ 🛑 '@Fixture' requires an enum with at least one case
+        }
+        """
+      }
+    }
+
+    @Test func attachedToClassDiagnoses() {
+      assertMacro {
+        """
+        @Fixture class User {
+          let id: Int
+        }
+        """
+      } diagnostics: {
+        """
+        @Fixture class User {
+        ┬───────
+        ╰─ 🛑 '@Fixture' can only be attached to a struct or enum
+          let id: Int
         }
         """
       }
