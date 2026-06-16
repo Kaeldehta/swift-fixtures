@@ -1,4 +1,4 @@
-# swift-fixture
+# Fixture
 
 [![CI](https://github.com/Kaeldehta/swift-fixture/workflows/CI/badge.svg)](https://github.com/Kaeldehta/swift-fixture/actions?query=workflow%3ACI)
 [![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2FKaeldehta%2Fswift-fixture%2Fbadge%3Ftype%3Dswift-versions)](https://swiftpackageindex.com/Kaeldehta/swift-fixture)
