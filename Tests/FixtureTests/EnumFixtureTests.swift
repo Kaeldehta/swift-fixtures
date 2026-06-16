@@ -26,7 +26,7 @@ struct EnumFixtureTests {
   }
 
   @Test func defaultsAssociatedValues() {
-    guard case let .active(code, label) = Status.fixture else {
+    guard case .active(let code, let label) = Status.fixture else {
       Issue.record("expected .active")
       return
     }

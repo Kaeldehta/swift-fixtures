@@ -1,5 +1,5 @@
-import Foundation
 import Fixture
+import Foundation
 import Testing
 
 @Fixture

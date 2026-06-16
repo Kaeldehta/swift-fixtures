@@ -84,10 +84,12 @@ public struct FixtureMacro: ExtensionMacro {
       }
     }
 
-    let parameters = properties
+    let parameters =
+      properties
       .map { "\($0.name): \($0.type) = \($0.defaultValue)" }
       .joined(separator: ",\n")
-    let arguments = properties
+    let arguments =
+      properties
       .map { "\($0.name): \($0.name)" }
       .joined(separator: ", ")
 
