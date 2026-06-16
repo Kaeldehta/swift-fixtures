@@ -1,17 +1,17 @@
 import SwiftDiagnostics
 
-enum MockableDiagnostic: String, DiagnosticMessage {
+enum FixtureDiagnostic: String, DiagnosticMessage {
   case requiresStruct
 
   var message: String {
     switch self {
     case .requiresStruct:
-      return "'@Mockable' can only be attached to a struct"
+      return "'@Fixture' can only be attached to a struct"
     }
   }
 
   var diagnosticID: MessageID {
-    MessageID(domain: "MockableMacros", id: rawValue)
+    MessageID(domain: "FixtureMacros", id: rawValue)
   }
 
   var severity: DiagnosticSeverity { .error }

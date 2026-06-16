@@ -4,7 +4,7 @@ import CompilerPluginSupport
 import PackageDescription
 
 let package = Package(
-  name: "swift-mockable",
+  name: "swift-fixture",
   platforms: [
     .macOS(.v10_15),
     .iOS(.v13),
@@ -12,7 +12,7 @@ let package = Package(
     .watchOS(.v6),
   ],
   products: [
-    .library(name: "Mockable", targets: ["Mockable"])
+    .library(name: "Fixture", targets: ["Fixture"])
   ],
   traits: [
     // Opt-in integrations with other libraries. Enable with, e.g.,
@@ -20,7 +20,7 @@ let package = Package(
     // consumer. The matching `swift-tagged` dependency is only resolved when enabled.
     .trait(
       name: "Tagged",
-      description: "Adds a Mockable conformance for pointfree's swift-tagged Tagged type."
+      description: "Adds a Fixture conformance for pointfree's swift-tagged Tagged type."
     ),
     .default(enabledTraits: []),
   ],
@@ -31,7 +31,7 @@ let package = Package(
   ],
   targets: [
     .macro(
-      name: "MockableMacros",
+      name: "FixtureMacros",
       dependencies: [
         .product(name: "SwiftCompilerPlugin", package: "swift-syntax"),
         .product(name: "SwiftDiagnostics", package: "swift-syntax"),
@@ -41,23 +41,23 @@ let package = Package(
       ]
     ),
     .target(
-      name: "Mockable",
+      name: "Fixture",
       dependencies: [
-        "MockableMacros",
+        "FixtureMacros",
         .product(name: "Tagged", package: "swift-tagged", condition: .when(traits: ["Tagged"])),
       ]
     ),
     .testTarget(
-      name: "MockableMacrosTests",
+      name: "FixtureMacrosTests",
       dependencies: [
-        "MockableMacros",
+        "FixtureMacros",
         .product(name: "MacroTesting", package: "swift-macro-testing"),
       ]
     ),
     .testTarget(
-      name: "MockableTests",
+      name: "FixtureTests",
       dependencies: [
-        "Mockable",
+        "Fixture",
         .product(name: "Tagged", package: "swift-tagged", condition: .when(traits: ["Tagged"])),
       ]
     ),

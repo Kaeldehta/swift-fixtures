@@ -3,7 +3,7 @@
 #if Tagged
   import Tagged
 
-  extension Tagged: Mockable where RawValue: Mockable {
-    public static var mock: Self { Self(rawValue: .mock) }
+  extension Tagged: Fixture where RawValue: Fixture {
+    public static var fixture: Self { Self(rawValue: .fixture) }
   }
 #endif

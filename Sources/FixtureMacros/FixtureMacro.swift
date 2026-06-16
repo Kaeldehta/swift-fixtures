@@ -3,7 +3,7 @@ import SwiftSyntax
 import SwiftSyntaxBuilder
 import SwiftSyntaxMacros
 
-public struct MockableMacro: ExtensionMacro {
+public struct FixtureMacro: ExtensionMacro {
   public static func expansion(
     of node: AttributeSyntax,
     attachedTo declaration: some DeclGroupSyntax,
@@ -13,7 +13,7 @@ public struct MockableMacro: ExtensionMacro {
   ) throws -> [ExtensionDeclSyntax] {
     guard let structDecl = declaration.as(StructDeclSyntax.self) else {
       context.diagnose(
-        Diagnostic(node: node, message: MockableDiagnostic.requiresStruct)
+        Diagnostic(node: node, message: FixtureDiagnostic.requiresStruct)
       )
       return []
     }
@@ -58,25 +58,25 @@ public struct MockableMacro: ExtensionMacro {
     let access = accessModifier.map { "\($0.trimmed) " } ?? ""
 
     let parameters = properties
-      .map { "\($0.name): \($0.type) = .mock" }
+      .map { "\($0.name): \($0.type) = .fixture" }
       .joined(separator: ",\n")
     let arguments = properties
       .map { "\($0.name): \($0.name)" }
       .joined(separator: ", ")
 
-    let mockFunction: DeclSyntax = """
-      \(raw: access)static func mock(\(raw: parameters)) -> Self {
+    let fixtureFunction: DeclSyntax = """
+      \(raw: access)static func fixture(\(raw: parameters)) -> Self {
       Self(\(raw: arguments))
       }
       """
-    let mockProperty: DeclSyntax = "\(raw: access)static var mock: Self { mock() }"
+    let fixtureProperty: DeclSyntax = "\(raw: access)static var fixture: Self { fixture() }"
 
-    // Only add the `: Mockable` clause when the type doesn't already declare it,
+    // Only add the `: Fixture` clause when the type doesn't already declare it,
     // otherwise the compiler reports a redundant conformance.
-    let inheritance = protocols.isEmpty ? "" : ": Mockable"
+    let inheritance = protocols.isEmpty ? "" : ": Fixture"
     let extensionDecl = try ExtensionDeclSyntax("extension \(type.trimmed)\(raw: inheritance)") {
-      mockFunction
-      mockProperty
+      fixtureFunction
+      fixtureProperty
     }
     return [extensionDecl]
   }

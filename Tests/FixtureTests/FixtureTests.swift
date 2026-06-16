@@ -1,14 +1,14 @@
 import Foundation
-import Mockable
+import Fixture
 import Testing
 
-@Mockable
+@Fixture
 struct Team {
   let id: Int
   let name: String
 }
 
-@Mockable
+@Fixture
 struct User {
   let id: Int
   let name: String
@@ -19,21 +19,21 @@ struct User {
 }
 
 @Suite
-struct MockableTests {
+struct FixtureTests {
   @Test func defaults() {
-    let user = User.mock()
+    let user = User.fixture()
     #expect(user.id == 0)
     #expect(user.name == "")
     #expect(user.isAdmin == false)
     #expect(user.avatar == nil)
     #expect(user.tags.isEmpty)
-    // Nested @Mockable composes via `.mock`.
+    // Nested @Fixture composes via `.fixture`.
     #expect(user.team.id == 0)
     #expect(user.team.name == "")
   }
 
   @Test func overrideOnlyWhatYouNeed() {
-    let user = User.mock(name: "Blob", isAdmin: true)
+    let user = User.fixture(name: "Blob", isAdmin: true)
     #expect(user.name == "Blob")
     #expect(user.isAdmin == true)
     // Everything else stays at its default.
@@ -41,10 +41,10 @@ struct MockableTests {
     #expect(user.avatar == nil)
   }
 
-  @Test func mockableConformance() {
-    // The macro synthesizes `static var mock`, satisfying `Mockable`.
-    func makeMock<T: Mockable>(_: T.Type) -> T { .mock }
-    let team = makeMock(Team.self)
+  @Test func fixtureConformance() {
+    // The macro synthesizes `static var fixture`, satisfying `Fixture`.
+    func makeFixture<T: Fixture>(_: T.Type) -> T { .fixture }
+    let team = makeFixture(Team.self)
     #expect(team.name == "")
   }
 }

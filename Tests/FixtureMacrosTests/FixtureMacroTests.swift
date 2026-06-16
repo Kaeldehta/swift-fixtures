@@ -1,19 +1,19 @@
 #if os(macOS)
   import MacroTesting
-  import MockableMacros
+  import FixtureMacros
   import Testing
 
   @Suite(
     .macros(
-      [MockableMacro.self],
+      [FixtureMacro.self],
       record: .missing
     )
   )
-  struct MockableMacroTests {
+  struct FixtureMacroTests {
     @Test func basics() {
       assertMacro {
         """
-        @Mockable struct User {
+        @Fixture struct User {
           let id: Int
           let name: String
         }
@@ -26,12 +26,12 @@
         }
 
         extension User {
-          static func mock(id: Int = .mock,
-            name: String = .mock) -> Self {
+          static func fixture(id: Int = .fixture,
+            name: String = .fixture) -> Self {
             Self(id: id, name: name)
           }
-          static var mock: Self {
-            mock()
+          static var fixture: Self {
+            fixture()
           }
         }
         """
@@ -41,7 +41,7 @@
     @Test func optionalsAndCollections() {
       assertMacro {
         """
-        @Mockable struct User {
+        @Fixture struct User {
           let avatar: URL?
           let tags: [String]
           let scores: [String: Int]
@@ -56,13 +56,13 @@
         }
 
         extension User {
-          static func mock(avatar: URL? = .mock,
-            tags: [String] = .mock,
-            scores: [String: Int] = .mock) -> Self {
+          static func fixture(avatar: URL? = .fixture,
+            tags: [String] = .fixture,
+            scores: [String: Int] = .fixture) -> Self {
             Self(avatar: avatar, tags: tags, scores: scores)
           }
-          static var mock: Self {
-            mock()
+          static var fixture: Self {
+            fixture()
           }
         }
         """
@@ -72,7 +72,7 @@
     @Test func publicAccessIsMirrored() {
       assertMacro {
         """
-        @Mockable public struct User {
+        @Fixture public struct User {
           public let id: Int
         }
         """
@@ -83,11 +83,11 @@
         }
 
         extension User {
-          public static func mock(id: Int = .mock) -> Self {
+          public static func fixture(id: Int = .fixture) -> Self {
             Self(id: id)
           }
-          public static var mock: Self {
-            mock()
+          public static var fixture: Self {
+            fixture()
           }
         }
         """
@@ -97,7 +97,7 @@
     @Test func computedStaticAndInitializedPropertiesAreOmitted() {
       assertMacro {
         """
-        @Mockable struct User {
+        @Fixture struct User {
           let id: Int
           var count = 0
           static let shared = "x"
@@ -114,11 +114,11 @@
         }
 
         extension User {
-          static func mock(id: Int = .mock) -> Self {
+          static func fixture(id: Int = .fixture) -> Self {
             Self(id: id)
           }
-          static var mock: Self {
-            mock()
+          static var fixture: Self {
+            fixture()
           }
         }
         """#
@@ -128,7 +128,7 @@
     @Test func emptyStruct() {
       assertMacro {
         """
-        @Mockable struct Empty {
+        @Fixture struct Empty {
         }
         """
       } expansion: {
@@ -137,11 +137,11 @@
         }
 
         extension Empty {
-            static func mock() -> Self {
+            static func fixture() -> Self {
                 Self()
             }
-            static var mock: Self {
-                mock()
+            static var fixture: Self {
+                fixture()
             }
         }
         """
@@ -151,15 +151,15 @@
     @Test func attachedToNonStructDiagnoses() {
       assertMacro {
         """
-        @Mockable enum Direction {
+        @Fixture enum Direction {
           case north
         }
         """
       } diagnostics: {
         """
-        @Mockable enum Direction {
-        ┬────────
-        ╰─ 🛑 '@Mockable' can only be attached to a struct
+        @Fixture enum Direction {
+        ┬───────
+        ╰─ 🛑 '@Fixture' can only be attached to a struct
           case north
         }
         """
