@@ -186,4 +186,4 @@ extension Color: Fixture {
 
 ## License
 
-<!-- TODO: add a LICENSE file and reference it here before publishing. -->
+This library is released under the MIT license. See [LICENSE](LICENSE) for details.
