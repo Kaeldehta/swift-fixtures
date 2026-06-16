@@ -1,5 +1,4 @@
-// Standard-library `Fixture` conformances. Defaults are the "empty"/zero value for
-// each type, chosen to be predictable rather than realistic.
+// Empty/zero defaults, chosen to be predictable rather than realistic.
 
 extension Int: Fixture { public static var fixture: Int { 0 } }
 extension Int8: Fixture { public static var fixture: Int8 { 0 } }
@@ -18,7 +17,6 @@ extension Bool: Fixture { public static var fixture: Bool { false } }
 extension String: Fixture { public static var fixture: String { "" } }
 extension Character: Fixture { public static var fixture: Character { " " } }
 
-// `nil` covers any optional property regardless of its wrapped type.
 extension Optional: Fixture { public static var fixture: Wrapped? { nil } }
 
 extension Array: Fixture { public static var fixture: [Element] { [] } }

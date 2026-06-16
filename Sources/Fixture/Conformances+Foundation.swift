@@ -1,8 +1,7 @@
 #if canImport(Foundation)
   import Foundation
 
-  // Foundation `Fixture` conformances. Values are deterministic (no randomness, no
-  // "now") so fixture data is stable across runs and snapshot tests.
+  // Deterministic values (no randomness, no "now") so fixtures stay stable across runs.
 
   extension UUID: Fixture {
     public static var fixture: UUID {

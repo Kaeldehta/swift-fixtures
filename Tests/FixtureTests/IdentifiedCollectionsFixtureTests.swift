@@ -1,5 +1,3 @@
-// Only compiled/run when the `IdentifiedCollections` trait is enabled
-// (e.g. `swift test --traits IdentifiedCollections`).
 #if IdentifiedCollections
   import Fixture
   import IdentifiedCollections

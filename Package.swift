@@ -15,9 +15,7 @@ let package = Package(
     .library(name: "Fixture", targets: ["Fixture"])
   ],
   traits: [
-    // Opt-in integrations with other libraries. Enable with, e.g.,
-    // `swift build --traits Tagged`, or `.package(..., traits: ["Tagged"])` from a
-    // consumer. Each integration's dependency is only resolved when its trait is enabled.
+    // Opt-in integrations; each dependency is only resolved when its trait is enabled.
     .trait(
       name: "Tagged",
       description: "Adds a Fixture conformance for pointfree's swift-tagged Tagged type."

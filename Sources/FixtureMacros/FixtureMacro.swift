@@ -18,9 +18,8 @@ public struct FixtureMacro: ExtensionMacro {
       return []
     }
 
-    // Memberwise-init parameters: stored properties with an explicit type annotation,
-    // no initializer, and no getter/setter. Properties with an initializer use their
-    // own default and are omitted from both the signature and the `Self(...)` call.
+    // Stored properties that are memberwise-init parameters: explicit type, no
+    // initializer (those keep their own default), no getter/setter.
     let properties = structDecl.memberBlock.members.compactMap {
       $0.decl.as(VariableDeclSyntax.self)
     }.filter { variable in
@@ -28,8 +27,7 @@ public struct FixtureMacro: ExtensionMacro {
         && !variable.modifiers.contains { $0.name.tokenKind == .keyword(.class) }
     }.flatMap { variable -> [(name: TokenSyntax, type: TypeSyntax)] in
       variable.bindings.compactMap { binding in
-        // Skip computed properties (a getter/setter accessor block); keep `willSet`/
-        // `didSet` observers, which are still stored.
+        // Skip computed properties, but keep stored ones with willSet/didSet observers.
         if let accessorBlock = binding.accessorBlock {
           switch accessorBlock.accessors {
           case .getter:
@@ -42,7 +40,6 @@ public struct FixtureMacro: ExtensionMacro {
             if isComputed { return nil }
           }
         }
-        // Skip properties that already have an initializer.
         guard binding.initializer == nil,
           let identifier = binding.pattern.as(IdentifierPatternSyntax.self)?.identifier,
           let type = binding.typeAnnotation?.type
@@ -51,7 +48,6 @@ public struct FixtureMacro: ExtensionMacro {
       }
     }
 
-    // Mirror the struct's access level on the generated members.
     let accessModifier = structDecl.modifiers.first {
       [.keyword(.public), .keyword(.package)].contains($0.name.tokenKind)
     }

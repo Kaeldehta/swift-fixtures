@@ -1,4 +1,3 @@
-// Only compiled/run when the `Tagged` trait is enabled (e.g. `swift test --traits Tagged`).
 #if Tagged
   import Fixture
   import Tagged
