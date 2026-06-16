@@ -49,6 +49,33 @@ public macro FixtureCase() = #externalMacro(module: "FixtureMacros", type: "Fixt
 /// }
 /// // User.fixture().email == "someone@example.com"
 /// ```
+///
+/// ## Customizing a nested `@Fixture` value
+///
+/// The expression is type-checked where the attribute is written, *before* `@Fixture`
+/// expands. A macro cannot see members synthesized by another macro at that point, so a
+/// nested type's generated `fixture(...)` factory is **not** visible if that type is
+/// declared in the *same module*:
+///
+/// ```swift
+/// @Fixture struct Address { let street: String; let city: String }
+/// @Fixture struct User {
+///   @FixtureValue(Address.fixture(city: "NYC")) let address: Address  // ❌ same module
+/// }
+/// ```
+///
+/// This compiles fine when `Address` comes from a *different* module (its factory is
+/// already a visible member by then). For a same-module nested type, customize a baked
+/// default through the memberwise initializer instead — which the compiler synthesizes,
+/// so it *is* visible — pulling the fields you don't change from `.fixture`:
+///
+/// ```swift
+/// @FixtureValue(Address(street: Address.fixture.street, city: "NYC")) let address: Address
+/// ```
+///
+/// Or skip the baked default and override at the call site, where the factory is fully
+/// visible: `User.fixture(address: .fixture(city: "NYC"))`. See
+/// `docs/adr/0001-nested-fixture-value-customization.md`.
 @attached(peer)
 public macro FixtureValue(_ value: Any) =
   #externalMacro(module: "FixtureMacros", type: "FixtureValueMacro")
