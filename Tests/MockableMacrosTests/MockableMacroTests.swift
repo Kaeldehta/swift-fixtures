@@ -5,7 +5,7 @@
 
   @Suite(
     .macros(
-      ["Mockable": MockableMacro.self],
+      [MockableMacro.self],
       record: .missing
     )
   )
