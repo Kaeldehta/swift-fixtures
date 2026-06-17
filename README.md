@@ -123,6 +123,57 @@ Profile.fixture(email: "other@example.com")   // still overridable at the call s
 > the call site (`User.fixture(address: .fixture(city: "NYC"))`) instead. See
 > [ADR 0001](docs/adr/0001-nested-fixture-value-customization.md).
 
+### Custom initializers
+
+If a struct declares an initializer in its body, Swift suppresses the memberwise
+initializer, so `@Fixture` mirrors that initializer instead: the factory's parameters
+match the initializer's (labels, names, types) and its body calls the initializer. Each
+parameter defaults to `.fixture` unless the initializer already supplies a default, which
+is kept.
+
+```swift
+@Fixture
+struct User {
+  let id: Int
+  let name: String
+
+  init(id: Int) {
+    self.id = id
+    self.name = "anonymous"
+  }
+}
+
+User.fixture(id: 1)  // calls init(id:); name stays "anonymous"
+```
+
+When a struct declares **more than one** initializer, mark the one to target with
+`@FixtureInit`:
+
+```swift
+@Fixture
+struct User {
+  let id: Int
+
+  @FixtureInit
+  init(id: Int) { self.id = id }
+
+  init(uuid: UUID) { self.id = uuid.hashValue }
+}
+```
+
+`@FixtureValue` still works on this path, but only by **passthrough correlation**: it
+applies to a parameter only when the initializer stores that parameter into the property
+unchanged (`self.x = x`, exactly once, with matching types). A `@FixtureValue` that's
+transformed, computed, assigned in multiple places, type-mismatched, or otherwise
+correlates to no parameter is diagnosed rather than silently dropped.
+
+> [!NOTE]
+> To keep the memberwise factory while still offering a custom initializer, declare that
+> initializer in an **extension** rather than the body — the body stays init-free, so the
+> memberwise path applies. A failable, throwing, or async initializer cannot satisfy
+> `static var fixture` and is diagnosed as unsupported. See
+> [ADR 0002](docs/adr/0002-custom-initializer-support.md).
+
 ### Enums
 
 `@Fixture` on an enum makes `static var fixture` return the first case, with any
