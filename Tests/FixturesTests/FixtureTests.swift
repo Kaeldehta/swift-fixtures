@@ -1,4 +1,4 @@
-import Fixture
+import Fixtures
 import Foundation
 import Testing
 

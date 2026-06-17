@@ -1,6 +1,6 @@
 #if os(macOS)
   import MacroTesting
-  import FixtureMacros
+  import FixturesMacros
   import Testing
 
   @Suite(

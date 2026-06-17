@@ -4,7 +4,7 @@ import CompilerPluginSupport
 import PackageDescription
 
 let package = Package(
-  name: "swift-fixture",
+  name: "swift-fixtures",
   platforms: [
     .macOS(.v10_15),
     .iOS(.v13),
@@ -12,7 +12,7 @@ let package = Package(
     .watchOS(.v6),
   ],
   products: [
-    .library(name: "Fixture", targets: ["Fixture"])
+    .library(name: "Fixtures", targets: ["Fixtures"])
   ],
   traits: [
     // Opt-in integrations; each dependency is only resolved when its trait is enabled.
@@ -35,7 +35,7 @@ let package = Package(
   ],
   targets: [
     .macro(
-      name: "FixtureMacros",
+      name: "FixturesMacros",
       dependencies: [
         .product(name: "SwiftCompilerPlugin", package: "swift-syntax"),
         .product(name: "SwiftDiagnostics", package: "swift-syntax"),
@@ -45,9 +45,9 @@ let package = Package(
       ]
     ),
     .target(
-      name: "Fixture",
+      name: "Fixtures",
       dependencies: [
-        "FixtureMacros",
+        "FixturesMacros",
         .product(name: "Tagged", package: "swift-tagged", condition: .when(traits: ["Tagged"])),
         .product(
           name: "IdentifiedCollections",
@@ -57,16 +57,16 @@ let package = Package(
       ]
     ),
     .testTarget(
-      name: "FixtureMacrosTests",
+      name: "FixturesMacrosTests",
       dependencies: [
-        "FixtureMacros",
+        "FixturesMacros",
         .product(name: "MacroTesting", package: "swift-macro-testing"),
       ]
     ),
     .testTarget(
-      name: "FixtureTests",
+      name: "FixturesTests",
       dependencies: [
-        "Fixture",
+        "Fixtures",
         .product(name: "Tagged", package: "swift-tagged", condition: .when(traits: ["Tagged"])),
         .product(
           name: "IdentifiedCollections",

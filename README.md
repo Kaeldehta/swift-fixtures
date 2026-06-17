@@ -47,7 +47,7 @@ dependencies: [
 ]
 ```
 
-`@Fixture` is attached to your type declarations, so add `Fixture` to whichever target
+`@Fixture` is attached to your type declarations, so add `Fixtures` to whichever target
 *declares* the types you want to annotate — usually your library or app target, not the
 test target:
 
@@ -55,7 +55,7 @@ test target:
 .target(
   name: "MyLibrary",
   dependencies: [
-    .product(name: "Fixture", package: "swift-fixture"),
+    .product(name: "Fixtures", package: "swift-fixture"),
   ]
 )
 ```
