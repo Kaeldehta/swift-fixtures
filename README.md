@@ -1,8 +1,8 @@
-# Fixture
+# Fixtures
 
-[![CI](https://github.com/Kaeldehta/swift-fixture/workflows/CI/badge.svg)](https://github.com/Kaeldehta/swift-fixture/actions?query=workflow%3ACI)
-[![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2FKaeldehta%2Fswift-fixture%2Fbadge%3Ftype%3Dswift-versions)](https://swiftpackageindex.com/Kaeldehta/swift-fixture)
-[![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2FKaeldehta%2Fswift-fixture%2Fbadge%3Ftype%3Dplatforms)](https://swiftpackageindex.com/Kaeldehta/swift-fixture)
+[![CI](https://github.com/Kaeldehta/swift-fixtures/workflows/CI/badge.svg)](https://github.com/Kaeldehta/swift-fixtures/actions?query=workflow%3ACI)
+[![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2FKaeldehta%2Fswift-fixtures%2Fbadge%3Ftype%3Dswift-versions)](https://swiftpackageindex.com/Kaeldehta/swift-fixtures)
+[![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2FKaeldehta%2Fswift-fixtures%2Fbadge%3Ftype%3Dplatforms)](https://swiftpackageindex.com/Kaeldehta/swift-fixtures)
 
 A Swift macro that generates `fixture(...)` factories for your types, so tests can build
 data by overriding only the fields they care about.
@@ -43,7 +43,7 @@ Add the package to your `Package.swift`:
 
 ```swift
 dependencies: [
-  .package(url: "https://github.com/Kaeldehta/swift-fixture", from: "0.1.0")
+  .package(url: "https://github.com/Kaeldehta/swift-fixtures", from: "0.1.0")
 ]
 ```
 
@@ -55,7 +55,7 @@ test target:
 .target(
   name: "MyLibrary",
   dependencies: [
-    .product(name: "Fixtures", package: "swift-fixture"),
+    .product(name: "Fixtures", package: "swift-fixtures"),
   ]
 )
 ```
@@ -176,7 +176,7 @@ Enable them when adding the dependency:
 
 ```swift
 .package(
-  url: "https://github.com/Kaeldehta/swift-fixture",
+  url: "https://github.com/Kaeldehta/swift-fixtures",
   from: "0.1.0",
   traits: ["Tagged", "IdentifiedCollections"]
 )
