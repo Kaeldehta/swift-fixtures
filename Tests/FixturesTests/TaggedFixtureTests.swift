@@ -1,5 +1,5 @@
 #if Tagged
-  import Fixture
+  import Fixtures
   import Tagged
   import Testing
 
