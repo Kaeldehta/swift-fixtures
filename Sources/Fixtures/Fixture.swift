@@ -29,9 +29,39 @@ public protocol Fixture {
 /// On an enum, `static var fixture` returns the first case (associated values defaulted
 /// to `.fixture`), or the case marked with ``FixtureCase()`` if one is present.
 ///
-/// - Note: This targets the struct's implicit memberwise initializer. A struct with a
-///   custom `init` whose signature differs from its stored properties may not compile
-///   against the generated factory.
+/// ## Custom initializers
+///
+/// When a struct declares an initializer in its body, Swift suppresses the memberwise
+/// initializer, so `@Fixture` instead mirrors that *targeted initializer*: the factory's
+/// parameters match the initializer's (labels, names, types) and its body calls the
+/// initializer. Each parameter defaults to `.fixture` unless the initializer already
+/// supplies a default, which is kept.
+///
+/// ```swift
+/// @Fixture
+/// struct User {
+///   let id: Int
+///   let name: String
+///   init(id: Int) {
+///     self.id = id
+///     self.name = "anonymous"
+///   }
+/// }
+///
+/// User.fixture(id: 1)  // calls init(id:); name stays "anonymous"
+/// ```
+///
+/// When several initializers are declared, mark the one to target with ``FixtureInit()``.
+/// To keep the memberwise factory while still offering a custom initializer, declare that
+/// initializer in an *extension* rather than the body.
+///
+/// A ``FixtureValue(_:)`` on a stored property still applies, but only by *passthrough
+/// correlation*: the initializer must store that parameter into the property unchanged
+/// (`self.x = x`, exactly once, matching types). A `@FixtureValue` that correlates to no
+/// parameter is diagnosed rather than silently dropped.
+///
+/// - Note: A failable, throwing, or async initializer cannot satisfy `static var fixture`
+///   and is diagnosed as unsupported.
 @attached(extension, conformances: Fixture, names: named(fixture))
 public macro Fixture() = #externalMacro(module: "FixturesMacros", type: "FixtureMacro")
 
@@ -39,6 +69,11 @@ public macro Fixture() = #externalMacro(module: "FixturesMacros", type: "Fixture
 /// the default of the first declared case.
 @attached(peer)
 public macro FixtureCase() = #externalMacro(module: "FixturesMacros", type: "FixtureCaseMacro")
+
+/// Marks the initializer that `@Fixture` should target when a struct declares more than
+/// one initializer in its body. Unnecessary when there is only a single initializer.
+@attached(peer)
+public macro FixtureInit() = #externalMacro(module: "FixturesMacros", type: "FixtureInitMacro")
 
 /// Overrides the default value `@Fixture` uses for a stored property, replacing the
 /// type's `.fixture` with the given expression in the generated factory.

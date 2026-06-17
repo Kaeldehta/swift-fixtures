@@ -6,6 +6,7 @@ struct FixtureMacrosPlugin: CompilerPlugin {
   let providingMacros: [Macro.Type] = [
     FixtureMacro.self,
     FixtureCaseMacro.self,
+    FixtureInitMacro.self,
     FixtureValueMacro.self,
   ]
 }

@@ -18,6 +18,21 @@ struct User {
   let tags: [String]
 }
 
+// A struct with a custom initializer whose parameters differ from its stored properties:
+// `@Fixture` mirrors the initializer instead of the (suppressed) memberwise init.
+@Fixture
+struct Member {
+  let id: Int
+  let displayName: String
+  @FixtureValue("anonymous") let handle: String
+
+  init(id: Int, displayName: String = "guest", handle: String) {
+    self.id = id
+    self.displayName = displayName
+    self.handle = handle
+  }
+}
+
 @Suite
 struct FixtureTests {
   @Test func defaults() {
@@ -46,5 +61,17 @@ struct FixtureTests {
     func makeFixture<T: Fixture>(_: T.Type) -> T { .fixture }
     let team = makeFixture(Team.self)
     #expect(team.name == "")
+  }
+
+  @Test func customInitDrivesFactory() {
+    let member = Member.fixture()
+    #expect(member.id == 0)  // no init default → `.fixture`
+    #expect(member.displayName == "guest")  // init default is kept
+    #expect(member.handle == "anonymous")  // @FixtureValue applies by passthrough
+
+    let overridden = Member.fixture(id: 7, displayName: "Bob")
+    #expect(overridden.id == 7)
+    #expect(overridden.displayName == "Bob")
+    #expect(overridden.handle == "anonymous")
   }
 }
