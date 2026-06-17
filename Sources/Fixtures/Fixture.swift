@@ -33,12 +33,12 @@ public protocol Fixture {
 ///   custom `init` whose signature differs from its stored properties may not compile
 ///   against the generated factory.
 @attached(extension, conformances: Fixture, names: named(fixture))
-public macro Fixture() = #externalMacro(module: "FixtureMacros", type: "FixtureMacro")
+public macro Fixture() = #externalMacro(module: "FixturesMacros", type: "FixtureMacro")
 
 /// Marks the enum case that `@Fixture` should use for `static var fixture`, overriding
 /// the default of the first declared case.
 @attached(peer)
-public macro FixtureCase() = #externalMacro(module: "FixtureMacros", type: "FixtureCaseMacro")
+public macro FixtureCase() = #externalMacro(module: "FixturesMacros", type: "FixtureCaseMacro")
 
 /// Overrides the default value `@Fixture` uses for a stored property, replacing the
 /// type's `.fixture` with the given expression in the generated factory.
@@ -78,4 +78,4 @@ public macro FixtureCase() = #externalMacro(module: "FixtureMacros", type: "Fixt
 /// `docs/adr/0001-nested-fixture-value-customization.md`.
 @attached(peer)
 public macro FixtureValue(_ value: Any) =
-  #externalMacro(module: "FixtureMacros", type: "FixtureValueMacro")
+  #externalMacro(module: "FixturesMacros", type: "FixtureValueMacro")

@@ -4,7 +4,7 @@
 
 ### Issue tracker
 
-Issues are tracked in GitHub Issues (`Kaeldehta/swift-fixture`) via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+Issues are tracked in GitHub Issues (`Kaeldehta/swift-fixtures`) via the `gh` CLI. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 

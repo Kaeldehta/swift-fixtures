@@ -1,4 +1,4 @@
-# ``Fixture``
+# ``Fixtures``
 
 Generate `fixture(...)` factories for your types, so tests build data by overriding only
 the fields they care about.

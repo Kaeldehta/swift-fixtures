@@ -1,5 +1,5 @@
 #if IdentifiedCollections
-  import Fixture
+  import Fixtures
   import IdentifiedCollections
   import Testing
 
