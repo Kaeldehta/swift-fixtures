@@ -1,5 +1,5 @@
 {
-  "originHash" : "6bf975e7f6cb2df31a58e0472798de3302eccddcd3631347abe14106bc41c353",
+  "originHash" : "854b0d56a8a6e35eebc1e26b1b9810d970aedc6a3a44f6aca722fbc0e199f8bd",
   "pins" : [
     {
       "identity" : "swift-collections",
@@ -62,6 +62,15 @@
       "state" : {
         "revision" : "3907a9438f5b57d317001dc99f3f11b46882272b",
         "version" : "0.10.0"
+      }
+    },
+    {
+      "identity" : "swiftrandomkit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/ibrahimkteish/SwiftRandomKit",
+      "state" : {
+        "revision" : "d4c1629ec71669464fe94af137bf7bcb29e051f7",
+        "version" : "2.0.0"
       }
     },
     {

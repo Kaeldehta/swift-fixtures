@@ -8,5 +8,7 @@ struct FixtureMacrosPlugin: CompilerPlugin {
     FixtureCaseMacro.self,
     FixtureInitMacro.self,
     FixtureValueMacro.self,
+    RandomFixtureMacro.self,
+    RandomFixtureValueMacro.self,
   ]
 }

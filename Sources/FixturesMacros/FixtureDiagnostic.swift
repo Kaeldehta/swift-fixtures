@@ -7,6 +7,9 @@ enum FixtureDiagnostic: String, DiagnosticMessage {
   case multipleFixtureInitMarkers
   case effectfulInitializer
   case orphanFixtureValue
+  case randomFixtureRequiresStructOrEnum
+  case randomFixtureEnumRequiresCase
+  case randomFixtureRequiresMemberwise
 
   var message: String {
     switch self {
@@ -24,6 +27,13 @@ enum FixtureDiagnostic: String, DiagnosticMessage {
     case .orphanFixtureValue:
       return
         "'@FixtureValue' does not correspond to any initializer parameter (the property is not stored unchanged from a parameter)"
+    case .randomFixtureRequiresStructOrEnum:
+      return "'@RandomFixture' can only be attached to a struct or enum"
+    case .randomFixtureEnumRequiresCase:
+      return "'@RandomFixture' requires an enum with at least one case"
+    case .randomFixtureRequiresMemberwise:
+      return
+        "'@RandomFixture' supports only the memberwise path; declare custom initializers in an extension to keep it"
     }
   }
 
