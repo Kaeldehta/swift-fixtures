@@ -245,6 +245,19 @@ Built-in `RandomFixture` conformances cover the same types as the `Fixture` ones
 integers draw from their full range, strings are short alphanumerics, collections have
 0–3 elements, `Optional` is nil half the time.
 
+When the same rule applies everywhere (say, ids are always positive), conform a domain
+type once instead of repeating `@RandomFixtureValue` on every property — fixtures
+containing it inherit the rule automatically:
+
+```swift
+struct UserID: RandomFixture {
+  let rawValue: Int
+  static func randomFixture<RNG: RandomNumberGenerator>(using rng: inout RNG) -> UserID {
+    UserID(rawValue: IntGenerator(in: 1 ... .max).run(using: &rng))
+  }
+}
+```
+
 > [!NOTE]
 > `@RandomFixture` supports the memberwise path only; declare custom initializers in an
 > extension to keep it. Enable the trait with
