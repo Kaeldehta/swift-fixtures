@@ -44,3 +44,9 @@ A `@FixtureValue` on a stored property that correlates to no targeted-initialize
 parameter, so its expression would silently go unused. The macro diagnoses it rather than
 dropping it.
 _Avoid_: dangling, unused attribute
+
+**Random fixture**:
+A varied value drawn from a `RandomNumberGenerator` via the `RandomFixture` protocol —
+the randomized counterpart of the fixture default. Differs on every draw but is
+reproducible under a seeded RNG. Gated behind the `SwiftRandomKit` package trait.
+_Avoid_: fuzz value, arbitrary

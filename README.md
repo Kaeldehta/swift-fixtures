@@ -201,6 +201,68 @@ enum Connection {
 Connection.fixture  // .disconnected
 ```
 
+### Randomized fixtures — `@RandomFixture`
+
+Fixture defaults are deliberately predictable. When a test wants *varied* data instead —
+many users, all different, but reproducible — enable the `SwiftRandomKit` trait and use
+`@RandomFixture`, the randomized sibling of `@Fixture`:
+
+```swift
+import SwiftRandomKit
+
+@RandomFixture
+struct User {
+  let id: Int
+  let name: String
+  let isAdmin: Bool
+}
+
+var rng = Xoshiro256(seed: 42)              // seeded: same seed, same users
+let user = User.randomFixture(using: &rng)
+let users = User.randomFixtureGenerator.array(50).run(using: &rng)
+```
+
+Every stored property draws from its own `RandomFixture` conformance, so randomized
+fixtures compose recursively just like fixture defaults. `randomFixtureGenerator` exposes
+the type as a [SwiftRandomKit](https://github.com/ibrahimkteish/SwiftRandomKit) generator,
+so the full combinator library (`array`, `orNil`, `map`, `filter`, ...) applies.
+
+On an enum, a case is picked **uniformly at random** (where `@Fixture` always uses the
+first case), with associated values drawn randomly.
+
+Customize a property's distribution with `@RandomFixtureValue`, passing any SwiftRandomKit
+generator whose element matches the property's type:
+
+```swift
+@RandomFixture
+struct Player {
+  @RandomFixtureValue(IntGenerator(in: 1...99)) let level: Int
+  let name: String
+}
+```
+
+Built-in `RandomFixture` conformances cover the same types as the `Fixture` ones —
+integers draw from their full range, strings are short alphanumerics, collections have
+0–3 elements, `Optional` is nil half the time.
+
+When the same rule applies everywhere (say, ids are always positive), conform a domain
+type once instead of repeating `@RandomFixtureValue` on every property — fixtures
+containing it inherit the rule automatically:
+
+```swift
+struct UserID: RandomFixture {
+  let rawValue: Int
+  static func randomFixture<RNG: RandomNumberGenerator>(using rng: inout RNG) -> UserID {
+    UserID(rawValue: IntGenerator(in: 1 ... .max).run(using: &rng))
+  }
+}
+```
+
+> [!NOTE]
+> `@RandomFixture` supports the memberwise path only; declare custom initializers in an
+> extension to keep it. Enable the trait with
+> `.package(url: ..., from: "0.1.0", traits: ["SwiftRandomKit"])`.
+
 ## Built-in conformances
 
 The library ships `Fixture` conformances for common types, chosen to be **predictable
@@ -222,6 +284,7 @@ so their dependencies are only resolved when you enable them:
 | ----------------------- | -------------------------------- | ---------- |
 | `Tagged`                | `Tagged`                         | [swift-tagged](https://github.com/pointfreeco/swift-tagged) |
 | `IdentifiedCollections` | `IdentifiedArray`                | [swift-identified-collections](https://github.com/pointfreeco/swift-identified-collections) |
+| `SwiftRandomKit`        | the `@RandomFixture` macro and `RandomFixture` protocol (randomized, seedable fixtures) | [SwiftRandomKit](https://github.com/ibrahimkteish/SwiftRandomKit) |
 
 Enable them when adding the dependency:
 
