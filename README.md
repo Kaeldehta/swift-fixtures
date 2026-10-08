@@ -107,12 +107,16 @@ Override the default the factory uses for a single property:
 struct Profile {
   @FixtureValue("someone@example.com") let email: String
   @FixtureValue(18) let age: Int
+  @FixtureValue(nil) let nickname: String?
   let name: String
 }
 
 Profile.fixture().email                       // "someone@example.com"
 Profile.fixture(email: "other@example.com")   // still overridable at the call site
 ```
+
+The expression is type-checked on its own, without the property's type, so leading-dot
+shorthand isn't supported: write `@FixtureValue(Color.red)`, not `@FixtureValue(.red)`.
 
 > [!NOTE]
 > The expression is type-checked where the attribute is written, before `@Fixture`
@@ -212,11 +216,11 @@ types nested in other types, such as `[Item]` or `Other<Model.ID>`:
 @Fixture
 struct Page<Item, Meta> {
   let items: [Item]
-  @FixtureValue([Meta]()) let tags: [Meta]
+  @FixtureValue(nil) let meta: Meta?
 }
 // extension Page: Fixture where Item: Fixture { … }
 
-Page<Int, Never>.fixture  // Page(items: [], tags: [])
+Page<Int, Never>.fixture  // Page(items: [], meta: nil)
 ```
 
 Anything with an explicit default adds no constraint: a property with `@FixtureValue`, or

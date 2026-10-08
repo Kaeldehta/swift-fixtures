@@ -36,5 +36,6 @@ rather than realistic so fixtures stay stable across runs.
 
 ### Customizing generated fixtures
 
-- ``FixtureValue(_:)``
+- ``FixtureValue(_:)-1y9c1``
+- ``FixtureValue(_:)-1qa6r``
 - ``FixtureCase()``

@@ -15,6 +15,13 @@ struct Listing<Item: Equatable, Meta: Equatable>: Equatable {
 }
 
 @Fixture
+struct Annotated<Value: Equatable, Note: Equatable>: Equatable {
+  let value: Value
+  @FixtureValue(nil) let note: Note?
+  @FixtureValue(Note?.none) let footnote: Note?
+}
+
+@Fixture
 struct Catalog: Equatable {
   let owner: Labeled<String>
   let listing: Listing<Int, Double>
@@ -69,6 +76,12 @@ struct GenericFixtureTests {
     // `Meta` need not be `Fixture`: its property defaults via `@FixtureValue`.
     struct NotFixture: Equatable {}
     #expect(Listing<Int, NotFixture>.fixture.tags == [])
+  }
+
+  @Test func nilFixtureValueLiftsConstraint() {
+    // `Note` need not be `Fixture`: its optional properties default to `nil`.
+    struct NotFixture: Equatable {}
+    #expect(Annotated<Int, NotFixture>.fixture == Annotated(value: 0, note: nil, footnote: nil))
   }
 
   @Test func memberTypePathIsConstrained() {
