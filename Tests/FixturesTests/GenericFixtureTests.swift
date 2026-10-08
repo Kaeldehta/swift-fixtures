@@ -15,7 +15,7 @@ struct Listing<Item: Equatable, Meta: Equatable>: Equatable {
 }
 
 @Fixture
-struct Inventory: Equatable {
+struct Catalog: Equatable {
   let owner: Labeled<String>
   let listing: Listing<Int, Double>
 }
@@ -51,8 +51,8 @@ enum Loadable<Value: Equatable>: Equatable {
 struct GenericFixtureTests {
   @Test func genericStructNestedInNonGenericStruct() {
     #expect(
-      Inventory.fixture
-        == Inventory(
+      Catalog.fixture
+        == Catalog(
           owner: Labeled(value: "", label: nil),
           listing: Listing(
             items: [], featured: Labeled(value: 0, label: nil), tags: [])))
