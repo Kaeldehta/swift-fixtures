@@ -55,10 +55,10 @@ public protocol Fixture {
 /// To keep the memberwise factory while still offering a custom initializer, declare that
 /// initializer in an *extension* rather than the body.
 ///
-/// A ``FixtureValue(_:)`` on a stored property still applies, but only by *passthrough
-/// correlation*: the initializer must store that parameter into the property unchanged
-/// (`self.x = x`, exactly once, matching types). A `@FixtureValue` that correlates to no
-/// parameter is diagnosed rather than silently dropped.
+/// A ``FixtureValue(_:)-1y9c1`` on a stored property still applies, but only by
+/// *passthrough correlation*: the initializer must store that parameter into the property
+/// unchanged (`self.x = x`, exactly once, matching types). A `@FixtureValue` that correlates
+/// to no parameter is diagnosed rather than silently dropped.
 ///
 /// - Note: A failable, throwing, or async initializer cannot satisfy `static var fixture`
 ///   and is diagnosed as unsupported, as is a generic initializer (`init<S>(…)`).
@@ -69,15 +69,15 @@ public protocol Fixture {
 /// constraint on every generic parameter, or member type rooted in one (`Model.ID`), that
 /// appears anywhere in the type of something defaulted to `.fixture`, including nested
 /// types such as `[Item]` or `Other<Model.ID>`. Anything with an explicit default (a
-/// ``FixtureValue(_:)``, or an initializer parameter's own default) adds no constraint, so
-/// `@FixtureValue` is how you remove one. On an enum, only the chosen case's associated
-/// values count.
+/// ``FixtureValue(_:)-1y9c1``, or an initializer parameter's own default) adds no
+/// constraint, so `@FixtureValue` is how you remove one. On an enum, only the chosen case's
+/// associated values count.
 ///
 /// ```swift
 /// @Fixture
 /// struct Page<Item, Meta> {
 ///   let items: [Item]
-///   @FixtureValue([Meta]()) let tags: [Meta]
+///   @FixtureValue(nil) let meta: Meta?
 /// }
 /// // extension Page: Fixture where Item: Fixture { … }
 /// ```
@@ -109,6 +109,11 @@ public macro FixtureInit() = #externalMacro(module: "FixturesMacros", type: "Fix
 /// // User.fixture().email == "someone@example.com"
 /// ```
 ///
+/// For an optional property, write `@FixtureValue(nil)`; see ``FixtureValue(_:)-1qa6r``.
+///
+/// The expression is type-checked on its own, without the property's type, so leading-dot
+/// shorthand isn't supported: write `@FixtureValue(Color.red)`, not `@FixtureValue(.red)`.
+///
 /// ## Customizing a nested `@Fixture` value
 ///
 /// The expression is type-checked where the attribute is written, *before* `@Fixture`
@@ -136,5 +141,20 @@ public macro FixtureInit() = #externalMacro(module: "FixturesMacros", type: "Fix
 /// visible: `User.fixture(address: .fixture(city: "NYC"))`. See
 /// `docs/adr/0001-nested-fixture-value-customization.md`.
 @attached(peer)
-public macro FixtureValue(_ value: Any) =
+public macro FixtureValue<T>(_ value: T) =
+  #externalMacro(module: "FixturesMacros", type: "FixtureValueMacro")
+
+/// Defaults an optional stored property to `nil` in the generated factory.
+///
+/// ```swift
+/// @Fixture struct User {
+///   @FixtureValue(nil) let nickname: String?
+/// }
+/// // User.fixture().nickname == nil
+/// ```
+///
+/// A bare `nil` has no type of its own, so it resolves to this overload; `@Fixture` copies
+/// it into the factory, where the property's optional type is known.
+@attached(peer)
+public macro FixtureValue(_ value: Never?) =
   #externalMacro(module: "FixturesMacros", type: "FixtureValueMacro")
