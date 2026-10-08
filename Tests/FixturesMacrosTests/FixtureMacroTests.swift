@@ -636,6 +636,231 @@
       }
     }
 
+    @Test func genericParameterGetsFixtureConstraint() {
+      assertMacro {
+        """
+        @Fixture struct Tagged<Value: Equatable> {
+          let value: Value
+          let label: String?
+        }
+        """
+      } expansion: {
+        """
+        struct Tagged<Value: Equatable> {
+          let value: Value
+          let label: String?
+        }
+
+        extension Tagged where Value: Fixture {
+          static func fixture(value: Value = .fixture,
+            label: String? = .fixture) -> Self {
+            Self(value: value, label: label)
+          }
+          static var fixture: Self {
+            fixture()
+          }
+        }
+        """
+      }
+    }
+
+    @Test func nestedGenericParametersAreConstrainedAndFixtureValueLiftsConstraint() {
+      assertMacro {
+        """
+        @Fixture struct Page<Item, Cursor, Meta> {
+          let items: [Item]
+          let cursor: Cursor
+          @FixtureValue(nil) let meta: Meta?
+        }
+        """
+      } expansion: {
+        """
+        struct Page<Item, Cursor, Meta> {
+          let items: [Item]
+          let cursor: Cursor
+          let meta: Meta?
+        }
+
+        extension Page where Item: Fixture, Cursor: Fixture {
+          static func fixture(items: [Item] = .fixture,
+            cursor: Cursor = .fixture,
+            meta: Meta? = nil) -> Self {
+            Self(items: items, cursor: cursor, meta: meta)
+          }
+          static var fixture: Self {
+            fixture()
+          }
+        }
+        """
+      }
+    }
+
+    @Test func memberTypePathsAreConstrained() {
+      assertMacro {
+        """
+        @Fixture struct Row<Model: Identifiable> {
+          let id: Model.ID
+          let model: Model
+        }
+        """
+      } expansion: {
+        """
+        struct Row<Model: Identifiable> {
+          let id: Model.ID
+          let model: Model
+        }
+
+        extension Row where Model.ID: Fixture, Model: Fixture {
+          static func fixture(id: Model.ID = .fixture,
+            model: Model = .fixture) -> Self {
+            Self(id: id, model: model)
+          }
+          static var fixture: Self {
+            fixture()
+          }
+        }
+        """
+      }
+    }
+
+    @Test func repeatedGenericParameterIsConstrainedOnce() {
+      assertMacro {
+        """
+        @Fixture struct Pair<Element> {
+          let first: Element
+          let second: Element?
+          let rest: [String: Element]
+        }
+        """
+      } expansion: {
+        """
+        struct Pair<Element> {
+          let first: Element
+          let second: Element?
+          let rest: [String: Element]
+        }
+
+        extension Pair where Element: Fixture {
+          static func fixture(first: Element = .fixture,
+            second: Element? = .fixture,
+            rest: [String: Element] = .fixture) -> Self {
+            Self(first: first, second: second, rest: rest)
+          }
+          static var fixture: Self {
+            fixture()
+          }
+        }
+        """
+      }
+    }
+
+    @Test func customInitGenericParametersAreConstrained() {
+      assertMacro {
+        """
+        @Fixture struct Box<Value, Extra> {
+          let value: Value
+          let extra: Extra?
+          init(_ value: Value, extra: Extra? = nil) {
+            self.value = value
+            self.extra = extra
+          }
+        }
+        """
+      } expansion: {
+        """
+        struct Box<Value, Extra> {
+          let value: Value
+          let extra: Extra?
+          init(_ value: Value, extra: Extra? = nil) {
+            self.value = value
+            self.extra = extra
+          }
+        }
+
+        extension Box where Value: Fixture {
+          static func fixture(_ value: Value = .fixture,
+            extra: Extra? = nil) -> Self {
+            Self(value, extra: extra)
+          }
+          static var fixture: Self {
+            fixture()
+          }
+        }
+        """
+      }
+    }
+
+    @Test func genericInitDiagnoses() {
+      assertMacro {
+        """
+        @Fixture struct Bag {
+          let items: [Int]
+          init<S: Sequence>(_ items: S) where S.Element == Int {
+            self.items = Array(items)
+          }
+        }
+        """
+      } diagnostics: {
+        """
+        @Fixture struct Bag {
+          let items: [Int]
+          init<S: Sequence>(_ items: S) where S.Element == Int {
+          ╰─ 🛑 '@Fixture' cannot target a generic initializer
+            self.items = Array(items)
+          }
+        }
+        """
+      }
+    }
+
+    @Test func genericEnumUnconstrainedWhenChosenCaseOmitsParameter() {
+      assertMacro {
+        """
+        @Fixture enum Loadable<Value> {
+          case idle
+          case loaded(Value)
+        }
+        """
+      } expansion: {
+        """
+        enum Loadable<Value> {
+          case idle
+          case loaded(Value)
+        }
+
+        extension Loadable {
+          static var fixture: Self {
+            .idle
+          }
+        }
+        """
+      }
+    }
+
+    @Test func genericEnumConstrainedByChosenCase() {
+      assertMacro {
+        """
+        @Fixture enum Loadable<Value> {
+          case idle
+          @FixtureCase case loaded(Value)
+        }
+        """
+      } expansion: {
+        """
+        enum Loadable<Value> {
+          case idle
+          case loaded(Value)
+        }
+
+        extension Loadable where Value: Fixture {
+          static var fixture: Self {
+            .loaded(.fixture)
+          }
+        }
+        """
+      }
+    }
+
     @Test func attachedToClassDiagnoses() {
       assertMacro {
         """

@@ -31,5 +31,7 @@ no constraint.
 - Generic parameters of an **enclosing** type are not recognized and are treated as
   concrete. `lexicalContext` would see `Outer<T>` but not `extension Outer { … }`, and a
   rule that works for only one spelling was judged worse than a documented limitation.
+  Likewise, a generic parameter reached only through a typealias (`typealias E = T`) is
+  invisible to the macro; the "never fails" guarantee holds only for spelled-out paths.
 - Loosening the rule later (e.g. exempting known containers) is non-breaking; tightening
   it is not.

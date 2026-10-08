@@ -6,6 +6,7 @@ enum FixtureDiagnostic: String, DiagnosticMessage {
   case multipleInitsRequireMarker
   case multipleFixtureInitMarkers
   case effectfulInitializer
+  case genericInitializer
   case orphanFixtureValue
 
   var message: String {
@@ -21,6 +22,8 @@ enum FixtureDiagnostic: String, DiagnosticMessage {
       return "'@Fixture' allows only one '@FixtureInit' initializer"
     case .effectfulInitializer:
       return "'@Fixture' cannot target a failable, throwing, or async initializer"
+    case .genericInitializer:
+      return "'@Fixture' cannot target a generic initializer"
     case .orphanFixtureValue:
       return
         "'@FixtureValue' does not correspond to any initializer parameter (the property is not stored unchanged from a parameter)"

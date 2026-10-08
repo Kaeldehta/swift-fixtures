@@ -201,6 +201,41 @@ enum Connection {
 Connection.fixture  // .disconnected
 ```
 
+### Generic types
+
+`@Fixture` works on generic structs and enums. The conformance is conditional: it places a
+`Fixture` constraint on every generic parameter, or member type rooted in one (`Model.ID`),
+that appears anywhere in the type of something defaulted to `.fixture`. That includes
+types nested in other types, such as `[Item]` or `Other<Model.ID>`:
+
+```swift
+@Fixture
+struct Page<Item, Meta> {
+  let items: [Item]
+  @FixtureValue([Meta]()) let tags: [Meta]
+}
+// extension Page: Fixture where Item: Fixture { … }
+
+Page<Int, Never>.fixture  // Page(items: [], tags: [])
+```
+
+Anything with an explicit default adds no constraint: a property with `@FixtureValue`, or
+an initializer parameter with its own default or a correlated `@FixtureValue`. Use
+`@FixtureValue` when a parameter shouldn't need to be `Fixture`. On an enum, only the
+associated values of the case `static var fixture` uses add constraints. The type's own
+constraints (`<Value: Equatable>`, a trailing `where`) are inherited by the extension and
+aren't repeated.
+
+> [!NOTE]
+> The targeted initializer can't declare its own generic parameters
+> (`init<S: Sequence>(_ items: S)`). That's diagnosed as unsupported. Generic parameters
+> of an **enclosing** type (`struct Outer<T> { @Fixture struct Inner { let v: T } }`) are
+> treated as concrete types, so the expansion won't compile. In that case, write the
+> conformance by hand (`extension Outer.Inner: Fixture where T: Fixture { … }`). The same
+> applies to a generic parameter that's only reachable through a typealias
+> (`typealias E = Value; let e: E`), because the macro only sees spelled names. See
+> [ADR 0003](docs/adr/0003-generic-type-support.md).
+
 ## Built-in conformances
 
 The library ships `Fixture` conformances for common types, chosen to be **predictable

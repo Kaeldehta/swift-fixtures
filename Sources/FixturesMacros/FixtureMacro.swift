@@ -17,19 +17,22 @@ public struct FixtureMacro: ExtensionMacro {
     }
     let access = accessModifier.map { "\($0.trimmed) " } ?? ""
 
-    let members: [DeclSyntax]
+    let members: FixtureMembers
+    let genericParameters: GenericParameterClauseSyntax?
     if let structDecl = declaration.as(StructDeclSyntax.self) {
       guard
         let structMembers = structMembers(
           of: structDecl, access: access, node: node, in: context)
       else { return [] }
       members = structMembers
+      genericParameters = structDecl.genericParameterClause
     } else if let enumDecl = declaration.as(EnumDeclSyntax.self) {
-      guard let property = enumFixture(of: enumDecl, access: access) else {
+      guard let enumMembers = enumFixture(of: enumDecl, access: access) else {
         context.diagnose(Diagnostic(node: node, message: FixtureDiagnostic.enumRequiresCase))
         return []
       }
-      members = [property]
+      members = enumMembers
+      genericParameters = enumDecl.genericParameterClause
     } else {
       context.diagnose(Diagnostic(node: node, message: FixtureDiagnostic.requiresStructOrEnum))
       return []
@@ -38,8 +41,18 @@ public struct FixtureMacro: ExtensionMacro {
     // Only add the `: Fixture` clause when the type doesn't already declare it,
     // otherwise the compiler reports a redundant conformance.
     let inheritance = protocols.isEmpty ? "" : ": Fixture"
-    let extensionDecl = try ExtensionDeclSyntax("extension \(type.trimmed)\(raw: inheritance)") {
-      for member in members { member }
+    // The type's own generic constraints are inherited by the extension; only the
+    // fixture constraints need spelling out.
+    let constraints = fixtureConstraints(
+      in: members.fixtureDefaultedTypes,
+      genericParameters: Set(genericParameters?.parameters.map(\.name.text) ?? []))
+    let whereClause =
+      constraints.isEmpty
+      ? "" : " where " + constraints.map { "\($0): Fixture" }.joined(separator: ", ")
+    let extensionDecl = try ExtensionDeclSyntax(
+      "extension \(type.trimmed)\(raw: inheritance)\(raw: whereClause)"
+    ) {
+      for member in members.decls { member }
     }
     return [extensionDecl]
   }
@@ -58,7 +71,7 @@ public struct FixtureMacro: ExtensionMacro {
     access: String,
     node: AttributeSyntax,
     in context: some MacroExpansionContext
-  ) -> [DeclSyntax]? {
+  ) -> FixtureMembers? {
     let initializers = structDecl.memberBlock.members.compactMap {
       $0.decl.as(InitializerDeclSyntax.self)
     }
@@ -96,7 +109,7 @@ public struct FixtureMacro: ExtensionMacro {
   private static func memberwiseMembers(
     of structDecl: StructDeclSyntax,
     access: String
-  ) -> [DeclSyntax] {
+  ) -> FixtureMembers {
     // Stored properties that are memberwise-init parameters: explicit type, no
     // initializer (those keep their own default), no getter/setter.
     let properties = structDecl.memberBlock.members.compactMap {
@@ -104,10 +117,11 @@ public struct FixtureMacro: ExtensionMacro {
     }.filter { variable in
       !variable.modifiers.contains { $0.name.tokenKind == .keyword(.static) }
         && !variable.modifiers.contains { $0.name.tokenKind == .keyword(.class) }
-    }.flatMap { variable -> [(name: TokenSyntax, type: TypeSyntax, defaultValue: String)] in
-      // A `@FixtureValue(x)` attribute supplies the parameter's default verbatim.
-      let customDefault = fixtureValue(of: variable).map { "\($0.expression.trimmed)" }
-      let defaultValue = customDefault ?? ".fixture"
+    }.flatMap {
+      variable -> [(name: TokenSyntax, type: TypeSyntax, defaultValue: String?)] in
+      // A `@FixtureValue(x)` attribute supplies the parameter's default verbatim; `nil`
+      // means the default is the type's fixture default.
+      let defaultValue = fixtureValue(of: variable).map { "\($0.expression.trimmed)" }
 
       return variable.bindings.compactMap { binding in
         // Skip computed properties, but keep stored ones with willSet/didSet observers.
@@ -133,21 +147,24 @@ public struct FixtureMacro: ExtensionMacro {
 
     let parameters =
       properties
-      .map { "\($0.name): \($0.type) = \($0.defaultValue)" }
+      .map { "\($0.name): \($0.type) = \($0.defaultValue ?? ".fixture")" }
       .joined(separator: ",\n")
     let arguments =
       properties
       .map { "\($0.name): \($0.name)" }
       .joined(separator: ", ")
 
-    return [
-      """
-      \(raw: access)static func fixture(\(raw: parameters)) -> Self {
-      Self(\(raw: arguments))
-      }
-      """,
-      "\(raw: access)static var fixture: Self { fixture() }",
-    ]
+    return FixtureMembers(
+      decls: [
+        """
+        \(raw: access)static func fixture(\(raw: parameters)) -> Self {
+        Self(\(raw: arguments))
+        }
+        """,
+        "\(raw: access)static var fixture: Self { fixture() }",
+      ],
+      fixtureDefaultedTypes: properties.filter { $0.defaultValue == nil }.map(\.type)
+    )
   }
 
   /// A `fixture(...)` factory mirroring the *targeted initializer's* parameter list
@@ -163,7 +180,7 @@ public struct FixtureMacro: ExtensionMacro {
     access: String,
     node: AttributeSyntax,
     in context: some MacroExpansionContext
-  ) -> [DeclSyntax]? {
+  ) -> FixtureMembers? {
     // A failable / throwing / async initializer cannot satisfy `static var fixture: Self`.
     let effectSpecifiers = targetInit.signature.effectSpecifiers
     if targetInit.optionalMark != nil
@@ -172,6 +189,13 @@ public struct FixtureMacro: ExtensionMacro {
     {
       context.diagnose(
         Diagnostic(node: targetInit, message: FixtureDiagnostic.effectfulInitializer))
+      return nil
+    }
+
+    // Its own generic parameters can't be defaulted or constrained by the conformance.
+    if targetInit.genericParameterClause != nil {
+      context.diagnose(
+        Diagnostic(node: targetInit, message: FixtureDiagnostic.genericInitializer))
       return nil
     }
 
@@ -198,13 +222,15 @@ public struct FixtureMacro: ExtensionMacro {
       defaultsByInternalName[internalName(of: parameter).text] = "\(fixtureValue.expression.trimmed)"
     }
 
-    let parameterClause = parameters.map { parameter -> String in
-      let internalName = internalName(of: parameter)
-      // Precedence: correlated `@FixtureValue` > the initializer's own default > `.fixture`.
-      let defaultValue =
-        defaultsByInternalName[internalName.text]
+    // Precedence: correlated `@FixtureValue` > the initializer's own default > `.fixture`.
+    // `nil` means the parameter takes its type's fixture default.
+    func explicitDefault(of parameter: FunctionParameterSyntax) -> String? {
+      defaultsByInternalName[internalName(of: parameter).text]
         ?? parameter.defaultValue.map { "\($0.value.trimmed)" }
-        ?? ".fixture"
+    }
+
+    let parameterClause = parameters.map { parameter -> String in
+      let defaultValue = explicitDefault(of: parameter) ?? ".fixture"
       let names =
         parameter.secondName.map { "\(parameter.firstName.trimmed) \($0.trimmed)" }
         ?? "\(parameter.firstName.trimmed)"
@@ -219,14 +245,32 @@ public struct FixtureMacro: ExtensionMacro {
       return "\(parameter.firstName.text): \(value)"
     }.joined(separator: ", ")
 
-    return [
-      """
-      \(raw: access)static func fixture(\(raw: parameterClause)) -> Self {
-      Self(\(raw: arguments))
-      }
-      """,
-      "\(raw: access)static var fixture: Self { fixture() }",
-    ]
+    return FixtureMembers(
+      decls: [
+        """
+        \(raw: access)static func fixture(\(raw: parameterClause)) -> Self {
+        Self(\(raw: arguments))
+        }
+        """,
+        "\(raw: access)static var fixture: Self { fixture() }",
+      ],
+      fixtureDefaultedTypes: parameters.filter { explicitDefault(of: $0) == nil }.map(\.type)
+    )
+  }
+
+  /// Every distinct type path rooted at one of `genericParameters` (`T`, `Model.ID`, …)
+  /// that appears anywhere in `types`, in order of first appearance. Each one becomes a
+  /// *fixture constraint* on the conformance.
+  private static func fixtureConstraints(
+    in types: [TypeSyntax],
+    genericParameters: Set<String>
+  ) -> [String] {
+    guard !genericParameters.isEmpty else { return [] }
+    let collector = FixtureConstraintCollector(genericParameters: genericParameters)
+    for type in types {
+      collector.walk(type)
+    }
+    return collector.paths
   }
 
   /// The initializer parameter that `variable`'s `@FixtureValue` correlates to by
@@ -333,7 +377,7 @@ public struct FixtureMacro: ExtensionMacro {
   private static func enumFixture(
     of enumDecl: EnumDeclSyntax,
     access: String
-  ) -> DeclSyntax? {
+  ) -> FixtureMembers? {
     let caseDecls = enumDecl.memberBlock.members.compactMap {
       $0.decl.as(EnumCaseDeclSyntax.self)
     }
@@ -346,7 +390,8 @@ public struct FixtureMacro: ExtensionMacro {
     guard let chosenCase = (markedCase ?? caseDecls.first)?.elements.first else { return nil }
 
     var value = ".\(chosenCase.name.text)"
-    if let parameters = chosenCase.parameterClause?.parameters {
+    let parameters = chosenCase.parameterClause?.parameters
+    if let parameters {
       let arguments = parameters.map { parameter -> String in
         if let label = parameter.firstName, label.tokenKind != .wildcard {
           return "\(label.text): .fixture"
@@ -355,6 +400,70 @@ public struct FixtureMacro: ExtensionMacro {
       }
       value += "(\(arguments.joined(separator: ", ")))"
     }
-    return "\(raw: access)static var fixture: Self { \(raw: value) }"
+    return FixtureMembers(
+      decls: ["\(raw: access)static var fixture: Self { \(raw: value) }"],
+      fixtureDefaultedTypes: parameters?.map(\.type) ?? []
+    )
+  }
+}
+
+/// The generated members of the conformance extension, plus the types of everything they
+/// default to `.fixture` — the source of the extension's fixture constraints.
+private struct FixtureMembers {
+  var decls: [DeclSyntax]
+  var fixtureDefaultedTypes: [TypeSyntax]
+}
+
+/// Collects the type paths rooted at a generic parameter (`T`, `Model.ID`) within a type,
+/// including those nested in generic arguments, arrays, optionals, and so on.
+private final class FixtureConstraintCollector: SyntaxVisitor {
+  let genericParameters: Set<String>
+  private(set) var paths: [String] = []
+
+  init(genericParameters: Set<String>) {
+    self.genericParameters = genericParameters
+    super.init(viewMode: .sourceAccurate)
+  }
+
+  override func visit(_ node: IdentifierTypeSyntax) -> SyntaxVisitorContinueKind {
+    if let path = rootedPath(of: TypeSyntax(node)) {
+      append(path)
+    }
+    return .visitChildren
+  }
+
+  override func visit(_ node: MemberTypeSyntax) -> SyntaxVisitorContinueKind {
+    // A whole path like `Model.ID` is one constraint; its root `Model` is not another.
+    if let path = rootedPath(of: TypeSyntax(node)) {
+      append(path)
+      return .skipChildren
+    }
+    return .visitChildren
+  }
+
+  /// `Model.ID` for a plain dotted path whose root is a generic parameter, else `nil`.
+  private func rootedPath(of type: TypeSyntax) -> String? {
+    var components: [String] = []
+    var current = type
+    while true {
+      if let member = current.as(MemberTypeSyntax.self), member.genericArgumentClause == nil {
+        components.insert(member.name.text, at: 0)
+        current = member.baseType
+      } else if let identifier = current.as(IdentifierTypeSyntax.self),
+        identifier.genericArgumentClause == nil,
+        genericParameters.contains(identifier.name.text)
+      {
+        components.insert(identifier.name.text, at: 0)
+        return components.joined(separator: ".")
+      } else {
+        return nil
+      }
+    }
+  }
+
+  private func append(_ path: String) {
+    if !paths.contains(path) {
+      paths.append(path)
+    }
   }
 }
