@@ -39,6 +39,13 @@ only when the initializer body assigns the parameter to that property unchanged
 to the matching factory parameter.
 _Avoid_: mapping, binding, name match
 
+**Fixture constraint**:
+The `Fixture` requirement a generic type's conformance places on a generic parameter or a
+member type rooted in one (`Model`, `Model.ID`) — imposed exactly when that type appears
+in the type of something whose default comes from a fixture default. A `@FixtureValue`
+lifts it.
+_Avoid_: generic bound, fixture requirement
+
 **Orphan `@FixtureValue`**:
 A `@FixtureValue` on a stored property that correlates to no targeted-initializer
 parameter, so its expression would silently go unused. The macro diagnoses it rather than

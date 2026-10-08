@@ -61,7 +61,31 @@ public protocol Fixture {
 /// parameter is diagnosed rather than silently dropped.
 ///
 /// - Note: A failable, throwing, or async initializer cannot satisfy `static var fixture`
-///   and is diagnosed as unsupported.
+///   and is diagnosed as unsupported, as is a generic initializer (`init<S>(…)`).
+///
+/// ## Generic types
+///
+/// On a generic struct or enum the conformance is conditional. It places a `Fixture`
+/// constraint on every generic parameter, or member type rooted in one (`Model.ID`), that
+/// appears anywhere in the type of something defaulted to `.fixture`, including nested
+/// types such as `[Item]` or `Other<Model.ID>`. Anything with an explicit default (a
+/// ``FixtureValue(_:)``, or an initializer parameter's own default) adds no constraint, so
+/// `@FixtureValue` is how you remove one. On an enum, only the chosen case's associated
+/// values count.
+///
+/// ```swift
+/// @Fixture
+/// struct Page<Item, Meta> {
+///   let items: [Item]
+///   @FixtureValue([Meta]()) let tags: [Meta]
+/// }
+/// // extension Page: Fixture where Item: Fixture { … }
+/// ```
+///
+/// - Note: Generic parameters of an *enclosing* type are treated as concrete types and
+///   aren't constrained, so the expansion won't compile. The same goes for a generic
+///   parameter reached only through a typealias. Write the conformance by hand instead
+///   (`extension Outer.Inner: Fixture where T: Fixture { … }`).
 @attached(extension, conformances: Fixture, names: named(fixture))
 public macro Fixture() = #externalMacro(module: "FixturesMacros", type: "FixtureMacro")
 
